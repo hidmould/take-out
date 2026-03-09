@@ -30,6 +30,7 @@ public class LoginCheckFilter implements Filter {
         String[] urls =new String[]{
                 "/employee/login",
                 "/employee/logout",
+                "/",  // 根路径，用于重定向到登录页
                 "/backend/**",
                 "/front/**",
         };
