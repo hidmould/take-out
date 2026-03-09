@@ -1,6 +1,9 @@
 package com.example.takeout.controller;
 
+
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.takeout.common.R;
 import com.example.takeout.entity.Employee;
 import com.example.takeout.service.EmployeeService;
@@ -8,10 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.DigestUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 
@@ -35,31 +35,32 @@ public class EmployeeController {
         Employee emp = employeeService.getOne(queryWrapper);
 
         // 3.如果没有查询到则返回登录失败结果
-        if (emp== null){
+        if (emp == null) {
             return R.error("登录失败");
         }
 
         // 4.密码比对，如果不一致则返回登录失败结果
-        if (!emp.getPassword().equals(password)){
+        if (!emp.getPassword().equals(password)) {
             return R.error("登录失败");
         }
 
         // 5.查看员工状态，如果为已禁用状态，则返回员工已禁用结果
-        if (emp.getStatus()==0){
+        if (emp.getStatus() == 0) {
             return R.error("账号已禁用");
         }
 
-        request.getSession().setAttribute("employee",emp.getId());
+        request.getSession().setAttribute("employee", emp.getId());
         return R.success(emp);
     }
 
     /**
      * 员工登出
+     *
      * @param request
      * @return
      */
     @PostMapping("/logout")
-    public R<String> logout(HttpServletRequest request){
+    public R<String> logout(HttpServletRequest request) {
         // 清理Session中保存的当前登录员工的id
         request.getSession().removeAttribute("employee");
         return R.success("退出成功");
@@ -67,12 +68,13 @@ public class EmployeeController {
 
     /**
      * 新增员工
+     *
      * @param employee
      * @return
      */
     @PostMapping
-    public R<String> save(HttpServletRequest request,@RequestBody Employee employee){
-        log.info("新增员工，员工信息：{}",employee.toString());
+    public R<String> save(HttpServletRequest request, @RequestBody Employee employee) {
+        log.info("新增员工，员工信息：{}", employee.toString());
         // 设置初始密码123456，需要进行md5加密处理
         employee.setPassword(DigestUtils.md5DigestAsHex("123456".getBytes()));
         // 设置创建时间
@@ -87,6 +89,31 @@ public class EmployeeController {
         employeeService.save(employee);
 
         return R.success("新增员工成功");
+    }
+
+    /**
+     * 员工信息分页查询
+     *
+     * @param page
+     * @param pageSize
+     * @param name
+     * @return
+     */
+    @GetMapping("/page")
+    public R<Page> page(int page, int pageSize, String name) {
+        log.info("page = {}, pageSize = {}, name = {}", page, pageSize, name);
+
+        // 构造分页构造器
+        Page pageInfo = new Page(page, pageSize);
+        // 构造条件构造器
+        LambdaQueryWrapper<Employee> queryWrapper = new LambdaQueryWrapper();
+        // 添加过滤条件
+        queryWrapper.like(StringUtils.isNotEmpty(name),Employee::getName,name);
+        // 添加排序条件
+        queryWrapper.orderByDesc(Employee::getUpdateTime);
+        //执行查询
+        employeeService.page(pageInfo, queryWrapper);
+        return R.success(pageInfo);
     }
 
 }
