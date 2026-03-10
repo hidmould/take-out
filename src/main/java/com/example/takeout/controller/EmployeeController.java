@@ -23,6 +23,12 @@ public class EmployeeController {
     @Autowired
     private EmployeeService employeeService;
 
+    /**
+     * 员工登录
+     *
+     * @param employee
+     * @return
+     */
     @RequestMapping("/login")
     public R<Employee> login(HttpServletRequest request, @RequestBody Employee employee) {
         // 1.将页面提交的密码进行md5加密处理
@@ -114,6 +120,23 @@ public class EmployeeController {
         //执行查询
         employeeService.page(pageInfo, queryWrapper);
         return R.success(pageInfo);
+    }
+
+    /**
+     * 根据 id 修改员工信息
+     * @param employee
+     * @return
+     */
+    @PutMapping
+    public R<String> update(HttpServletRequest request,@RequestBody Employee employee){
+        log.info(employee.toString());
+
+        Long empI = (Long) request.getSession().getAttribute("employee");
+        employee.setUpdateTime(LocalDateTime.now());
+        employee.setUpdateUser(empI);
+        employeeService.updateById(employee);
+
+        return R.success("员工信息修改成功");
     }
 
 }
