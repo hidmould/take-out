@@ -44,14 +44,24 @@
 
   // 响应拦截器
   service.interceptors.response.use(res => {
-      if (res.data.code === 0 && res.data.msg === 'NOTLOGIN') {// 返回登录页面
-        console.log('---/backend/page/login/login.html---')
-        localStorage.removeItem('userInfo')
-        window.top.location.href = '/backend/page/login/login.html'
-      } else {
-        return res.data
-      }
-    },
+        if (res.data.code === 0 && res.data.msg === 'NOTLOGIN') {// 返回登录页面
+          console.log('---/backend/page/login/login.html---')
+          localStorage.removeItem('userInfo')
+          window.top.location.href = '/backend/page/login/login.html'
+        } else {
+          // 将响应数据中的 long 类型转换为字符串，防止精度丢失
+          const data = res.data.data;
+          if (data && data.records) {
+            data.records.forEach(record => {
+              if (record.id) {
+                record.id = String(record.id);
+              }
+            });
+          }
+          return res.data;
+        }
+      },
+
     error => {
       console.log('err' + error)
       let { message } = error;
